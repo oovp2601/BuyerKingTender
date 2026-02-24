@@ -1,5 +1,6 @@
 package buyerking;
 
+import buyerking.web.OrderServlet;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -191,7 +192,7 @@ public class ChatbotInterface {
 
                 String item = orderJson.substring(start + 1, end);
 
-                // Extract name: find "name":"value"
+                // Extract name
                 String name = "";
                 int nameIdx = item.indexOf("\"name\":");
                 if (nameIdx != -1) {
@@ -202,7 +203,7 @@ public class ChatbotInterface {
                     }
                 }
 
-                // Extract price: find "price":"value"
+                // Extract price
                 String priceStr = "";
                 int priceIdx = item.indexOf("\"price\":");
                 if (priceIdx != -1) {
@@ -215,11 +216,9 @@ public class ChatbotInterface {
 
                 if (!name.isEmpty() && !priceStr.isEmpty()) {
                     itemCount++;
-                    // Parse price (remove "Rp" and commas)
                     String cleanPrice = priceStr.replace("Rp", "").replace(",", "").trim();
                     double price = Double.parseDouble(cleanPrice);
                     total += price;
-
                     response.append(String.format("%d. %s - %s\n", itemCount, name, priceStr));
                 }
 
@@ -229,7 +228,15 @@ public class ChatbotInterface {
             response.append("\n---\n");
             response.append(String.format("**Total Items:** %d\n", itemCount));
             response.append(String.format("**Total Price:** Rp%,d\n\n", (long) total));
-            response.append("✅ Your order has been recorded! Thank you for shopping with BuyerKing.");
+
+            // ── Persist the order to the database ────────────────────────────
+            int orderId = OrderServlet.saveOrder("Guest", orderJson, total);
+            if (orderId > 0) {
+                response.append("✅ Your order has been sent to the seller! Order #" + orderId + "\n");
+                response.append("The seller will accept or reject it shortly. Check back soon!");
+            } else {
+                response.append("✅ Your order has been recorded! Thank you for shopping with BuyerKing.");
+            }
 
             return response.toString();
 

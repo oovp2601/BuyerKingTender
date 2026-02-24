@@ -24,6 +24,8 @@ public class WebServer {
             // API Endpoints
             server.createContext("/api/chat", new ChatbotServlet());
             server.createContext("/api/tenders", new TenderServlet());
+            OrderServlet orderServlet = new OrderServlet();
+            server.createContext("/api/orders", orderServlet);
 
             // Static File Handler (Frontend)
             server.createContext("/", new StaticFileHandler());

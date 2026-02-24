@@ -75,3 +75,13 @@ INSERT INTO products (product_name, category, description, base_price, seller_id
 -- Sample Buyer
 INSERT INTO buyers (buyer_name, email, address) VALUES
 ('Rangga', 'rangga@email.com', 'South Jakarta');
+
+-- Orders Table (created by buyers via chat, managed by sellers)
+CREATE TABLE IF NOT EXISTS orders (
+    order_id INT AUTO_INCREMENT PRIMARY KEY,
+    buyer_name VARCHAR(100) DEFAULT 'Guest',
+    items_json TEXT NOT NULL,
+    total_price DECIMAL(12,2) DEFAULT 0.00,
+    status ENUM('pending','accepted','rejected') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
