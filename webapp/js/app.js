@@ -2,19 +2,24 @@ const chatHistory = document.getElementById('chat-history');
 const messageInput = document.getElementById('chatInput');
 const sendBtn = document.getElementById('sendBtn');
 
-// Global selection state
-let selectedItems = [];
+// Global state
+let cart = [];
+let hasPlacedOrder = false;
 
-// Handle Enter key
+// UI Elements
+const cartDrawer = document.getElementById('cartDrawer');
+const cartCountBadge = document.getElementById('cartCountBadge');
+const cartItemsContainer = document.getElementById('cartItemsContainer');
+const cartTotalPrice = document.getElementById('cartTotalPrice');
+
+// Enter key
 if (messageInput) {
     messageInput.addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            sendMessage();
-        }
+        if (e.key === 'Enter') sendMessage();
     });
 }
 
-// Handle Send Button
+// Send Button
 if (sendBtn) {
     sendBtn.addEventListener('click', () => sendMessage());
 }
@@ -23,14 +28,11 @@ function sendMessage(text = null) {
     const message = text || messageInput.value.trim();
     if (!message) return;
 
-    // Add User Message
     addMessageToChat('user', message);
     if (!text) messageInput.value = '';
 
-    // Simulate thinking
     const loadingId = addMessageToChat('bot', '...', true);
 
-    // Disable input
     if (messageInput) messageInput.disabled = true;
     if (sendBtn) sendBtn.disabled = true;
 
@@ -41,14 +43,14 @@ function sendMessage(text = null) {
     })
         .then(response => response.json())
         .then(data => {
-            // Remove loading
             const loadingEl = document.getElementById(loadingId);
             if (loadingEl) loadingEl.remove();
 
-            // Process Response
-            // API returns {status: "success", message: "..."} OR {success: true, data: "..."}
-            // Let's handle both for safety
-            const reply = data.data || data.message;
+            let reply = data.data || data.message;
+            if (typeof reply === 'string' && reply.startsWith('"') && reply.endsWith('"')) {
+                reply = reply.substring(1, reply.length - 1);
+                reply = reply.replace(/\\n/g, '\n').replace(/\\"/g, '"');
+            }
 
             if (data.status === 'success' || data.success) {
                 processBotResponse(reply);
@@ -75,123 +77,271 @@ function processBotResponse(response) {
     if (!response) return;
 
     if (response.startsWith('$$MENU$$:')) {
-        // Render Menu Chips
         const categories = response.substring(9).split('|');
-        let html = '<div>Here are our categories:</div><div class="menu-chips">';
+        let html = '<div style="margin-bottom:8px;">Here are our categories:</div><div class="menu-chips">';
         categories.forEach(cat => {
             if (cat.trim()) {
-                html += `<div class="chip" onclick="sendMessage('Show items in ${cat}')">${cat}</div>`;
+                html += `<div class="chip" onclick="sendMessage('show items in ${cat}')">${cat}</div>`;
             }
         });
         html += '</div>';
         addMessageToChat('bot', html, false, true);
 
     } else if (response.includes('$$SELECTABLE$$:')) {
-        // Render Selectable Cards
         const lines = response.split('\n');
-        let html = '';
+        let html = '<div class="products-grid">';
         let hasItems = false;
+        let textPrefix = '';
 
         lines.forEach(line => {
             if (line.includes('$$SELECTABLE$$:')) {
-                // Format: $$SELECTABLE$$:ID|Name|Price|Seller|Rating|Speed
                 const parts = line.replace('$$SELECTABLE$$:', '').split('|');
-                if (parts.length >= 6) {
+                if (parts.length >= 7) {
                     const id = parts[0];
                     const name = parts[1];
                     const price = parts[2];
                     const seller = parts[3];
                     const rating = parts[4];
                     const speed = parts[5];
+                    const category = parts[6];
 
                     html += `
-                    <div class="product-card" onclick="toggleSelection(this, '${id}', '${name}', '${price}')">
+                    <div class="product-card">
                         <div class="product-info">
-                            <span class="product-name">${name}</span>
-                            <div class="product-meta">
-                                <span class="product-price">${price}</span> • ⭐ ${rating} • 🚀 ${speed}
-                            </div>
-                            <div class="product-meta" style="color: #aaa;">${seller}</div>
+                            <div class="product-name">${name}</div>
+                            <div class="product-price">${price}</div>
+                            <div class="product-meta">⭐ ${rating} &nbsp;·&nbsp; ⏱ ${speed} &nbsp;·&nbsp; ${seller}</div>
                         </div>
-                        <div class="product-check"></div>
+                        <button class="add-btn" onclick="addToCart('${id}', '${name}', '${price}', '${seller}')">
+                            + Add
+                        </button>
                     </div>`;
                     hasItems = true;
                 }
-            } else {
-                // Regular text
-                if (line.trim()) html += `<div>${line}</div>`;
+            } else if (line.trim()) {
+                textPrefix += `<div>${line}</div>`;
             }
         });
+        html += '</div>';
 
         if (hasItems) {
-            html += `<div class="action-actions">
-                        <button class="add-to-cart-btn" onclick="addSelectionToCart()">Add Selected to Order</button>
-                     </div>`;
+            addMessageToChat('bot', textPrefix + html, false, true);
+        } else {
+            addMessageToChat('bot', textPrefix.replace(/\n/g, '<br>'), false, true);
         }
 
-        addMessageToChat('bot', html, false, true);
-
     } else {
-        // Standard Text
         const formatted = response.replace(/\n/g, '<br>');
         addMessageToChat('bot', formatted, false, true);
     }
 }
 
-function toggleSelection(card, id, name, price) {
-    card.classList.toggle('selected');
-
-    // Check if selected
-    const isSelected = card.classList.contains('selected');
-
-    if (isSelected) {
-        selectedItems.push({ id, name, price });
-    } else {
-        const index = selectedItems.findIndex(item => item.id === id);
-        if (index > -1) {
-            selectedItems.splice(index, 1);
-        }
-    }
-}
-
-function addSelectionToCart() {
-    if (selectedItems.length === 0) {
-        alert("Please select at least one item.");
-        return;
-    }
-
-    // Format order data as JSON string
-    const orderData = JSON.stringify(selectedItems);
-    let msg = "ORDER:" + orderData;
-    sendMessage(msg);
-
-    // Clear selection state and remove visual selection
-    document.querySelectorAll('.product-card.selected').forEach(card => {
-        card.classList.remove('selected');
-    });
-    selectedItems = [];
-}
-
 function addMessageToChat(sender, text, isLoading = false, isHtml = false) {
     const msgDiv = document.createElement('div');
-    msgDiv.className = `message ${sender}`;
+    msgDiv.className = `msg ${sender}`;
     if (isLoading) msgDiv.id = 'loading-' + Date.now();
 
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'content';
-
-    if (isHtml) {
-        contentDiv.innerHTML = text;
-    } else {
-        contentDiv.textContent = text;
-    }
-
-    msgDiv.appendChild(contentDiv);
+    if (isHtml) msgDiv.innerHTML = text;
+    else msgDiv.textContent = text;
 
     if (chatHistory) {
         chatHistory.appendChild(msgDiv);
         chatHistory.scrollTop = chatHistory.scrollHeight;
     }
-
     return msgDiv.id;
 }
+
+// ── Shopping Cart Logic ──
+function toggleCart() {
+    if (cartDrawer) cartDrawer.classList.toggle('open');
+}
+
+function addToCart(id, name, priceStr, seller) {
+    let numPrice = parseInt(priceStr.replace(/[^0-9]/g, ''), 10) || 0;
+    cart.push({ id, name, price: numPrice.toString(), priceStr, seller });
+    renderCart();
+
+    // Quick pop effect on badge
+    cartCountBadge.style.transform = 'scale(1.5)';
+    setTimeout(() => cartCountBadge.style.transform = 'scale(1)', 200);
+
+    if (!cartDrawer.classList.contains('open')) {
+        toggleCart(); // Auto open cart on first add
+    }
+}
+
+function removeFromCart(index) {
+    cart.splice(index, 1);
+    renderCart();
+}
+
+function renderCart() {
+    const countBadge = document.getElementById('cartCountBadge');
+    if (countBadge) countBadge.textContent = cart.length + (cart.length === 1 ? ' item' : ' items');
+
+    if (cart.length === 0) {
+        cartItemsContainer.innerHTML = '<div class="cart-empty">Your cart is empty.<br>Ask the assistant to find items!</div>';
+        if (cartTotalPrice) cartTotalPrice.textContent = 'Rp 0';
+        return;
+    }
+
+    let html = '';
+    let total = 0;
+    cart.forEach((item, index) => {
+        total += parseInt(item.price, 10);
+        html += `
+        <div class="cart-item">
+            <div class="cart-item-info">
+                <span class="cart-item-name">${item.name}</span>
+                <span class="cart-item-price">${item.priceStr}</span>
+            </div>
+            <button class="cart-item-remove" onclick="removeFromCart(${index})" title="Remove">&times;</button>
+        </div>`;
+    });
+
+    cartItemsContainer.innerHTML = html;
+    if (cartTotalPrice) cartTotalPrice.textContent = 'Rp ' + total.toLocaleString('id-ID');
+}
+
+// ── Checkout & Maps Logic ──
+let orderNoteCache = "";
+let mapInstance = null;
+let mapMarker = null;
+let currentLat = -6.200000;
+let currentLng = 106.816666;
+
+function proceedToCheckout() {
+    if (cart.length === 0) {
+        alert("Your cart is still empty!");
+        return;
+    }
+    toggleCart(); // close drawer
+    orderNoteCache = prompt("Additional note for seller (optional):", "") || "";
+    document.getElementById('mapModalOverlay').style.display = 'block';
+    document.getElementById('mapModal').style.display = 'block';
+
+    if (!mapInstance) {
+        mapInstance = L.map('map').setView([currentLat, currentLng], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OS'
+        }).addTo(mapInstance);
+
+        mapMarker = L.marker([currentLat, currentLng], { draggable: true }).addTo(mapInstance);
+        mapMarker.on('dragend', function (event) {
+            var position = mapMarker.getLatLng();
+            currentLat = position.lat;
+            currentLng = position.lng;
+        });
+        mapInstance.on('click', function (e) {
+            mapMarker.setLatLng(e.latlng);
+            currentLat = e.latlng.lat;
+            currentLng = e.latlng.lng;
+        });
+    }
+    setTimeout(() => { mapInstance.invalidateSize(); }, 200);
+}
+
+function closeMapModal() {
+    document.getElementById('mapModalOverlay').style.display = 'none';
+    document.getElementById('mapModal').style.display = 'none';
+}
+
+function submitOrderWithAddress() {
+    const address = document.getElementById('buyerAddress').value.trim();
+    if (!address) {
+        alert("Please enter a detailed address.");
+        return;
+    }
+
+    const orderData = JSON.stringify(cart);
+    let msg = "ORDER:" + orderData;
+    if (orderNoteCache) msg += "|NOTE:" + orderNoteCache;
+    msg += "|ADDRESS:" + address + "|LAT:" + currentLat + "|LNG:" + currentLng;
+
+    sendMessage(msg);
+
+    hasPlacedOrder = true;
+    document.getElementById('sellerChatBtn').style.display = 'flex';
+
+    cart = [];
+    renderCart();
+    closeMapModal();
+}
+
+// ── Seller Chat Modal ──
+function openSellerChatModal() {
+    document.getElementById('sellerChatModalOverlay').style.display = 'block';
+    document.getElementById('sellerChatModal').style.display = 'block';
+    document.getElementById('sellerChatBtn').style.background = '#111';
+}
+
+function closeSellerChatModal() {
+    document.getElementById('sellerChatModalOverlay').style.display = 'none';
+    document.getElementById('sellerChatModal').style.display = 'none';
+}
+
+function escHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"'`=\/]/g, function (s) {
+        return {
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;',
+            "'": '&#39;', '/': '&#x2F;', '`': '&#x60;', '=': '&#x3D;'
+        }[s];
+    });
+}
+
+function addMessageToSellerChat(sender, text) {
+    const history = document.getElementById('sellerChatHistory');
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'seller-msg-bubble';
+
+    if (sender === 'Guest' || sender === 'Buyer') {
+        msgDiv.classList.add('mine');
+    } else {
+        msgDiv.classList.add('theirs');
+        text = `<b>${escHtml(sender)}:</b> ${text}`;
+    }
+
+    msgDiv.innerHTML = text.replace(/\n/g, '<br>');
+    history.appendChild(msgDiv);
+    history.scrollTop = history.scrollHeight;
+}
+
+function sendDirectMessageToSeller() {
+    const input = document.getElementById('sellerChatInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    addMessageToSellerChat('Guest', text);
+    input.value = '';
+
+    fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sender: "Guest", receiver: "Seller", content: text })
+    }).catch(err => console.error('Failed to send message', err));
+}
+
+// ── Polling for Messages ──
+setInterval(() => {
+    fetch('/api/messages')
+        .then(response => response.json())
+        .then(data => {
+            if ((data.status === 'success' || data.success) && data.data) {
+                const messages = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
+                messages.forEach(msg => {
+                    hasPlacedOrder = true;
+                    document.getElementById('sellerChatBtn').style.display = 'flex';
+
+                    addMessageToSellerChat(msg.sender, msg.content);
+
+                    if (document.getElementById('sellerChatModal').style.display === 'none') {
+                        document.getElementById('sellerChatBtn').style.background = '#e74c3c';
+                        setTimeout(() => {
+                            document.getElementById('sellerChatBtn').style.background = '#111';
+                        }, 3000);
+                    }
+                });
+            }
+        }).catch(err => { /* quiet drop */ });
+}, 3000);

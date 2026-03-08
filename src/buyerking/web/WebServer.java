@@ -26,6 +26,7 @@ public class WebServer {
             server.createContext("/api/tenders", new TenderServlet());
             OrderServlet orderServlet = new OrderServlet();
             server.createContext("/api/orders", orderServlet);
+            server.createContext("/api/messages", new MessageServlet());
 
             // Static File Handler (Frontend)
             server.createContext("/", new StaticFileHandler());

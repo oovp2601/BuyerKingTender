@@ -46,34 +46,47 @@ public class OrderServlet implements HttpHandler {
     private void handleGetOrders(HttpExchange exchange) throws IOException {
         try {
             ensureOrdersTableExists();
-            Connection conn = DatabaseManager.getConnection();
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(
-                    "SELECT order_id, buyer_name, items_json, total_price, status, created_at " +
-                            "FROM orders ORDER BY created_at DESC");
+            try (Connection conn = DatabaseManager.getConnection();
+                    Statement stmt = conn.createStatement();
+                    ResultSet rs = stmt.executeQuery(
+                            "SELECT order_id, buyer_name, items_json, total_price, status, created_at, note, buyer_address, latitude, longitude "
+                                    +
+                                    "FROM orders ORDER BY created_at DESC")) {
 
-            StringBuilder jsonArray = new StringBuilder("[");
-            boolean first = true;
-            while (rs.next()) {
-                if (!first)
-                    jsonArray.append(",");
-                first = false;
-                // Escape the items_json value carefully
-                String itemsJson = rs.getString("items_json");
-                if (itemsJson == null)
-                    itemsJson = "[]";
-                jsonArray.append(String.format(
-                        "{\"order_id\":%d,\"buyer_name\":\"%s\",\"items\":%s,\"total_price\":%.2f,\"status\":\"%s\",\"created_at\":\"%s\"}",
-                        rs.getInt("order_id"),
-                        ApiResponse.escape(rs.getString("buyer_name")),
-                        itemsJson,
-                        rs.getDouble("total_price"),
-                        rs.getString("status"),
-                        rs.getString("created_at")));
+                StringBuilder jsonArray = new StringBuilder("[");
+                boolean first = true;
+                while (rs.next()) {
+                    if (!first)
+                        jsonArray.append(",");
+                    first = false;
+                    // Escape the items_json value carefully
+                    String itemsJson = rs.getString("items_json");
+                    if (itemsJson == null)
+                        itemsJson = "[]";
+                    String note = rs.getString("note");
+                    if (note == null)
+                        note = "";
+                    String buyerAddress = rs.getString("buyer_address");
+                    if (buyerAddress == null)
+                        buyerAddress = "null";
+
+                    jsonArray.append(String.format(
+                            "{\"order_id\":%d,\"buyer_name\":\"%s\",\"items\":%s,\"total_price\":%.2f,\"note\":\"%s\",\"buyer_address\":\"%s\",\"latitude\":%.6f,\"longitude\":%.6f,\"status\":\"%s\",\"created_at\":\"%s\"}",
+                            rs.getInt("order_id"),
+                            ApiResponse.escape(rs.getString("buyer_name")),
+                            itemsJson,
+                            rs.getDouble("total_price"),
+                            ApiResponse.escape(note),
+                            ApiResponse.escape(buyerAddress),
+                            rs.getDouble("latitude"),
+                            rs.getDouble("longitude"),
+                            rs.getString("status"),
+                            rs.getString("created_at")));
+                }
+                jsonArray.append("]");
+
+                sendResponse(exchange, 200, ApiResponse.success("Orders fetched", jsonArray.toString()));
             }
-            jsonArray.append("]");
-
-            sendResponse(exchange, 200, ApiResponse.success("Orders fetched", jsonArray.toString()));
         } catch (Exception e) {
             e.printStackTrace();
             sendResponse(exchange, 500, ApiResponse.error("Internal Server Error: " + e.getMessage()));
@@ -86,15 +99,18 @@ public class OrderServlet implements HttpHandler {
             ensureOrdersTableExists();
             String body = readBody(exchange);
 
-            // Parse simple JSON fields: buyerName, itemsJson, totalPrice
+            // Parse simple JSON fields: buyerName, itemsJson, totalPrice, note
             String buyerName = parseJsonString(body, "buyerName");
             String itemsJson = parseJsonString(body, "itemsJson");
             String totalPriceStr = parseJsonString(body, "totalPrice");
+            String note = parseJsonString(body, "note");
 
             if (buyerName == null || buyerName.isEmpty())
                 buyerName = "Guest";
             if (itemsJson == null || itemsJson.isEmpty())
                 itemsJson = "[]";
+            if (note == null || note.isEmpty())
+                note = "";
             double totalPrice = 0.0;
             if (totalPriceStr != null && !totalPriceStr.isEmpty()) {
                 try {
@@ -103,22 +119,25 @@ public class OrderServlet implements HttpHandler {
                 }
             }
 
-            Connection conn = DatabaseManager.getConnection();
-            PreparedStatement ps = conn.prepareStatement(
-                    "INSERT INTO orders (buyer_name, items_json, total_price, status) VALUES (?, ?, ?, 'pending')",
-                    Statement.RETURN_GENERATED_KEYS);
-            ps.setString(1, buyerName);
-            ps.setString(2, itemsJson);
-            ps.setDouble(3, totalPrice);
-            ps.executeUpdate();
+            try (Connection conn = DatabaseManager.getConnection();
+                    PreparedStatement ps = conn.prepareStatement(
+                            "INSERT INTO orders (buyer_name, items_json, total_price, note, status) VALUES (?, ?, ?, ?, 'pending')",
+                            Statement.RETURN_GENERATED_KEYS)) {
+                ps.setString(1, buyerName);
+                ps.setString(2, itemsJson);
+                ps.setDouble(3, totalPrice);
+                ps.setString(4, note);
+                ps.executeUpdate();
 
-            ResultSet keys = ps.getGeneratedKeys();
-            int newId = 0;
-            if (keys.next())
-                newId = keys.getInt(1);
+                try (ResultSet keys = ps.getGeneratedKeys()) {
+                    int newId = 0;
+                    if (keys.next())
+                        newId = keys.getInt(1);
 
-            sendResponse(exchange, 200,
-                    ApiResponse.success("Order created", String.valueOf(newId)));
+                    sendResponse(exchange, 200,
+                            ApiResponse.success("Order created", String.valueOf(newId)));
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace();
             sendResponse(exchange, 500, ApiResponse.error("Internal Server Error: " + e.getMessage()));
@@ -142,17 +161,18 @@ public class OrderServlet implements HttpHandler {
             }
 
             int orderId = Integer.parseInt(orderIdStr.trim());
-            Connection conn = DatabaseManager.getConnection();
-            PreparedStatement ps = conn.prepareStatement(
-                    "UPDATE orders SET status = ? WHERE order_id = ?");
-            ps.setString(1, status);
-            ps.setInt(2, orderId);
-            int rows = ps.executeUpdate();
+            try (Connection conn = DatabaseManager.getConnection();
+                    PreparedStatement ps = conn.prepareStatement(
+                            "UPDATE orders SET status = ? WHERE order_id = ?")) {
+                ps.setString(1, status);
+                ps.setInt(2, orderId);
+                int rows = ps.executeUpdate();
 
-            if (rows > 0) {
-                sendResponse(exchange, 200, ApiResponse.success("Order updated", "\"" + status + "\""));
-            } else {
-                sendResponse(exchange, 404, ApiResponse.error("Order not found"));
+                if (rows > 0) {
+                    sendResponse(exchange, 200, ApiResponse.success("Order updated", "\"" + status + "\""));
+                } else {
+                    sendResponse(exchange, 404, ApiResponse.error("Order not found"));
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -161,20 +181,27 @@ public class OrderServlet implements HttpHandler {
     }
 
     // ── Static helper used by ChatbotInterface to save orders ─────────────
-    public static int saveOrder(String buyerName, String itemsJson, double totalPrice) {
+    public static int saveOrder(String buyerName, String itemsJson, double totalPrice, String note, String buyerAddress,
+            double lat, double lng) {
         try {
             ensureOrdersTableExists();
-            Connection conn = DatabaseManager.getConnection();
-            PreparedStatement ps = conn.prepareStatement(
-                    "INSERT INTO orders (buyer_name, items_json, total_price, status) VALUES (?, ?, ?, 'pending')",
-                    Statement.RETURN_GENERATED_KEYS);
-            ps.setString(1, buyerName);
-            ps.setString(2, itemsJson);
-            ps.setDouble(3, totalPrice);
-            ps.executeUpdate();
-            ResultSet keys = ps.getGeneratedKeys();
-            if (keys.next())
-                return keys.getInt(1);
+            try (Connection conn = DatabaseManager.getConnection();
+                    PreparedStatement ps = conn.prepareStatement(
+                            "INSERT INTO orders (buyer_name, items_json, total_price, note, buyer_address, latitude, longitude, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')",
+                            Statement.RETURN_GENERATED_KEYS)) {
+                ps.setString(1, buyerName);
+                ps.setString(2, itemsJson);
+                ps.setDouble(3, totalPrice);
+                ps.setString(4, (note == null) ? "" : note);
+                ps.setString(5, (buyerAddress == null || buyerAddress.isEmpty()) ? "null" : buyerAddress);
+                ps.setDouble(6, lat);
+                ps.setDouble(7, lng);
+                ps.executeUpdate();
+                try (ResultSet keys = ps.getGeneratedKeys()) {
+                    if (keys.next())
+                        return keys.getInt(1);
+                }
+            }
         } catch (Exception e) {
             System.err.println("Failed to save order: " + e.getMessage());
         }
@@ -182,18 +209,40 @@ public class OrderServlet implements HttpHandler {
     }
 
     public static void ensureOrdersTableExists() {
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            Statement stmt = conn.createStatement();
-            stmt.execute(
-                    "CREATE TABLE IF NOT EXISTS orders (" +
-                            "  order_id INT AUTO_INCREMENT PRIMARY KEY," +
-                            "  buyer_name VARCHAR(100) DEFAULT 'Guest'," +
-                            "  items_json TEXT NOT NULL," +
-                            "  total_price DECIMAL(12,2) DEFAULT 0.00," +
-                            "  status ENUM('pending','accepted','rejected') DEFAULT 'pending'," +
-                            "  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
-                            ")");
+        try (Connection conn = DatabaseManager.getConnection();
+                Statement stmt = conn.createStatement()) {
+            // Check if table exists (SQLite specific check)
+            DatabaseMetaData meta = conn.getMetaData();
+            try (ResultSet res = meta.getTables(null, null, "orders", null)) {
+                if (!res.next()) {
+                    stmt.execute(
+                            "CREATE TABLE orders (" +
+                                    "  order_id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                                    "  buyer_name VARCHAR(100) DEFAULT 'Guest'," +
+                                    "  items_json TEXT NOT NULL," +
+                                    "  total_price DECIMAL(12,2) DEFAULT 0.00," +
+                                    "  status VARCHAR(20) DEFAULT 'pending'," +
+                                    "  note TEXT," +
+                                    "  buyer_address TEXT," +
+                                    "  latitude REAL," +
+                                    "  longitude REAL," +
+                                    "  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                                    ")");
+                } else {
+                    try {
+                        stmt.execute("ALTER TABLE orders ADD COLUMN buyer_address TEXT");
+                    } catch (Exception ignored) {
+                    }
+                    try {
+                        stmt.execute("ALTER TABLE orders ADD COLUMN latitude REAL");
+                    } catch (Exception ignored) {
+                    }
+                    try {
+                        stmt.execute("ALTER TABLE orders ADD COLUMN longitude REAL");
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
         } catch (Exception e) {
             System.err.println("Warning creating orders table: " + e.getMessage());
         }

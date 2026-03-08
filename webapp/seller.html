@@ -5,121 +5,143 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BuyerKing — Seller Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg: #0a0f1e;
-            --surface: rgba(255, 255, 255, 0.04);
-            --border: rgba(255, 255, 255, 0.08);
-            --accent: #6c63ff;
-            --accent2: #e94560;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --text: #f0f4ff;
-            --muted: rgba(255, 255, 255, 0.45);
-            --font: 'Outfit', sans-serif;
-        }
-
-        *,
-        *::before,
-        *::after {
-            box-sizing: border-box;
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            font-family: var(--font);
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            background-image:
-                radial-gradient(ellipse at 0% 0%, hsla(245, 60%, 20%, 0.6) 0, transparent 55%),
-                radial-gradient(ellipse at 100% 0%, hsla(340, 55%, 20%, 0.5) 0, transparent 55%),
-                radial-gradient(ellipse at 50% 100%, hsla(220, 50%, 12%, 0.8) 0, transparent 60%);
+            font-family: 'Inter', sans-serif;
+            background: #f5f5f5;
+            color: #111;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
         }
 
-        /* ── Header ─────────────────────────────────────── */
-        .header {
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 240px;
+            background: #fff;
+            border-right: 1px solid #e5e5e5;
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 18px 32px;
-            background: rgba(0, 0, 0, 0.35);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border);
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            flex-direction: column;
+            padding: 24px 16px;
+            flex-shrink: 0;
         }
 
         .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .brand-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--accent), var(--accent2));
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-        }
-
-        .brand-title {
-            font-size: 1.3rem;
+            font-size: 1.1rem;
             font-weight: 700;
+            margin-bottom: 4px;
         }
 
         .brand-sub {
-            font-size: 0.75rem;
-            color: var(--muted);
-            letter-spacing: 0.08em;
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 28px;
+        }
+
+        .nav-label {
+            font-size: 0.7rem;
+            font-weight: 600;
             text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #aaa;
+            margin: 0 8px 10px;
         }
 
-        .header-actions {
+        .nav-group {
             display: flex;
-            align-items: center;
-            gap: 16px;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 24px;
         }
 
-        .btn-link {
-            padding: 8px 20px;
-            border-radius: 24px;
-            border: 1px solid var(--border);
-            background: var(--surface);
-            color: var(--muted);
-            font-family: var(--font);
+        .nav-btn {
+            padding: 9px 12px;
+            border-radius: 8px;
+            border: none;
+            background: none;
+            color: #444;
             font-size: 0.875rem;
+            font-family: 'Inter', sans-serif;
             cursor: pointer;
+            text-align: left;
+            transition: 0.15s;
+        }
+
+        .nav-btn:hover {
+            background: #f5f5f5;
+            color: #111;
+        }
+
+        .nav-btn.active {
+            background: #111;
+            color: #fff;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+        }
+
+        .back-link {
+            display: block;
+            padding: 10px 12px;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
             text-decoration: none;
-            transition: all 0.2s;
+            color: #333;
+            font-size: 0.875rem;
+            text-align: center;
+            transition: 0.15s;
         }
 
-        .btn-link:hover {
-            border-color: var(--accent);
-            color: var(--text);
+        .back-link:hover {
+            background: #111;
+            color: #fff;
+            border-color: #111;
         }
 
-        .status-dot {
+        /* ── Content Area ── */
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .topbar {
+            padding: 16px 28px;
+            background: #fff;
+            border-bottom: 1px solid #e5e5e5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .topbar h2 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .live-dot {
             display: flex;
             align-items: center;
             gap: 6px;
             font-size: 0.8rem;
-            color: var(--success);
+            color: #16a34a;
+            font-weight: 500;
         }
 
-        .status-dot::before {
+        .live-dot::before {
             content: '';
-            width: 8px;
-            height: 8px;
-            background: var(--success);
+            width: 7px;
+            height: 7px;
+            background: #16a34a;
             border-radius: 50%;
             animation: pulse 2s infinite;
         }
@@ -132,34 +154,34 @@
             }
 
             50% {
-                opacity: 0.4;
+                opacity: .3;
             }
         }
 
-        /* ── Stats bar ──────────────────────────────────── */
-        .stats-bar {
+        /* ── Stats ── */
+        .stats {
             display: flex;
-            gap: 20px;
-            padding: 20px 32px;
-            border-bottom: 1px solid var(--border);
+            gap: 16px;
+            padding: 20px 28px;
+            border-bottom: 1px solid #e5e5e5;
+            background: #fff;
         }
 
         .stat-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 14px 22px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            min-width: 130px;
+            flex: 1;
+            padding: 16px 20px;
+            background: #fafafa;
+            border: 1px solid #e5e5e5;
+            border-radius: 10px;
         }
 
         .stat-label {
             font-size: 0.75rem;
-            color: var(--muted);
+            color: #888;
+            font-weight: 500;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
         }
 
         .stat-value {
@@ -167,306 +189,270 @@
             font-weight: 700;
         }
 
+        .stat-value.total {
+            color: #111;
+        }
+
         .stat-value.pending {
-            color: var(--warning);
+            color: #d97706;
         }
 
         .stat-value.accepted {
-            color: var(--success);
+            color: #16a34a;
         }
 
         .stat-value.rejected {
-            color: var(--danger);
+            color: #dc2626;
         }
 
-        .stat-value.total {
-            color: var(--accent);
+        /* ── Orders List ── */
+        .orders-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 28px;
+            background: #f5f5f5;
         }
 
-        /* ── Main content ───────────────────────────────── */
-        .main {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 32px;
+        .orders-area::-webkit-scrollbar {
+            width: 4px;
         }
 
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 20px;
+        .orders-area::-webkit-scrollbar-thumb {
+            background: #ddd;
+            border-radius: 4px;
+        }
+
+        .section-header {
             display: flex;
             align-items: center;
             gap: 10px;
-            color: var(--text);
+            margin-bottom: 16px;
         }
 
-        .section-title .count-badge {
-            background: var(--accent);
-            color: white;
-            font-size: 0.7rem;
-            font-weight: 700;
-            padding: 2px 8px;
-            border-radius: 20px;
+        .section-header h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
         }
 
-        /* ── Order Cards ────────────────────────────────── */
+        .section-count {
+            background: #111;
+            color: #fff;
+            border-radius: 12px;
+            padding: 2px 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
         .orders-list {
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
         }
 
         .order-card {
-            background: rgba(255, 255, 255, 0.035);
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            padding: 22px 26px;
-            transition: transform 0.2s, border-color 0.3s;
-            animation: slideIn 0.35s ease;
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            border-radius: 12px;
+            padding: 20px;
+            transition: 0.2s;
         }
 
         .order-card:hover {
-            transform: translateY(-2px);
-            border-color: rgba(108, 99, 255, 0.3);
-        }
-
-        .order-card.accepted {
-            border-color: rgba(16, 185, 129, 0.35);
-            background: rgba(16, 185, 129, 0.04);
-        }
-
-        .order-card.rejected {
-            border-color: rgba(239, 68, 68, 0.25);
-            background: rgba(239, 68, 68, 0.04);
+            border-color: #bbb;
         }
 
         .order-card.pending {
-            border-color: rgba(245, 158, 11, 0.3);
+            border-left: 4px solid #d97706;
         }
 
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(12px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .order-card.accepted {
+            border-left: 4px solid #16a34a;
         }
 
-        .order-header {
+        .order-card.rejected {
+            border-left: 4px solid #dc2626;
+        }
+
+        .order-top {
             display: flex;
-            align-items: flex-start;
             justify-content: space-between;
-            margin-bottom: 16px;
-            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 14px;
         }
 
-        .order-meta {
+        .order-info {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 3px;
         }
 
         .order-id {
-            font-size: 0.8rem;
-            color: var(--muted);
+            font-size: 0.75rem;
+            color: #888;
         }
 
         .order-buyer {
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 600;
         }
 
         .order-time {
             font-size: 0.78rem;
-            color: var(--muted);
+            color: #aaa;
         }
 
-        .status-badge {
-            padding: 5px 14px;
+        .order-address {
+            font-size: 0.8rem;
+            color: #3b82f6;
+            margin-top: 2px;
+        }
+
+        .order-note {
+            font-size: 0.8rem;
+            color: #d97706;
+            margin-top: 4px;
+            font-style: italic;
+            background: #fffbeb;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .status-pill {
+            padding: 4px 12px;
             border-radius: 20px;
-            font-size: 0.78rem;
+            font-size: 0.75rem;
             font-weight: 600;
-            letter-spacing: 0.04em;
-            white-space: nowrap;
         }
 
-        .status-badge.pending {
-            background: rgba(245, 158, 11, 0.15);
-            color: var(--warning);
-            border: 1px solid rgba(245, 158, 11, 0.3);
+        .status-pill.pending {
+            background: #fef3c7;
+            color: #d97706;
         }
 
-        .status-badge.accepted {
-            background: rgba(16, 185, 129, 0.15);
-            color: var(--success);
-            border: 1px solid rgba(16, 185, 129, 0.3);
+        .status-pill.accepted {
+            background: #dcfce7;
+            color: #16a34a;
         }
 
-        .status-badge.rejected {
-            background: rgba(239, 68, 68, 0.12);
-            color: var(--danger);
-            border: 1px solid rgba(239, 68, 68, 0.25);
+        .status-pill.rejected {
+            background: #fee2e2;
+            color: #dc2626;
         }
 
-        /* ── Items list ─────────────────────────────────── */
-        .items-list {
+        .order-items {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            margin-bottom: 18px;
+            gap: 6px;
+            margin-bottom: 16px;
         }
 
         .item-row {
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            background: rgba(255, 255, 255, 0.04);
-            border-radius: 10px;
-            padding: 10px 14px;
-        }
-
-        .item-name {
-            font-size: 0.9rem;
-            font-weight: 500;
+            padding: 8px 12px;
+            background: #fafafa;
+            border-radius: 6px;
+            font-size: 0.85rem;
         }
 
         .item-price {
-            font-size: 0.88rem;
-            color: var(--accent2);
-            font-weight: 600;
+            color: #333;
+            font-weight: 500;
         }
 
         .order-footer {
             display: flex;
-            align-items: center;
             justify-content: space-between;
+            align-items: center;
             padding-top: 14px;
-            border-top: 1px solid var(--border);
+            border-top: 1px solid #f0f0f0;
         }
 
         .order-total {
-            font-size: 1rem;
-            font-weight: 700;
+            font-size: 0.9rem;
+            font-weight: 600;
         }
 
         .order-total span {
-            color: var(--success);
+            color: #111;
         }
 
-        .action-buttons {
+        .action-btns {
             display: flex;
-            gap: 10px;
+            gap: 8px;
         }
 
-        .btn-accept,
-        .btn-reject {
-            padding: 9px 20px;
-            border-radius: 24px;
-            border: none;
-            font-family: var(--font);
-            font-size: 0.875rem;
+        .action-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid;
+            font-size: 0.8rem;
             font-weight: 600;
+            font-family: 'Inter', sans-serif;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s;
+            transition: 0.2s;
         }
 
         .btn-accept {
-            background: rgba(16, 185, 129, 0.15);
-            color: var(--success);
-            border: 1px solid rgba(16, 185, 129, 0.4);
+            background: #f0fdf4;
+            color: #16a34a;
+            border-color: #86efac;
         }
 
         .btn-accept:hover:not(:disabled) {
-            background: var(--success);
-            color: white;
+            background: #16a34a;
+            color: #fff;
         }
 
         .btn-reject {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger);
-            border: 1px solid rgba(239, 68, 68, 0.35);
+            background: #fff5f5;
+            color: #dc2626;
+            border-color: #fca5a5;
         }
 
         .btn-reject:hover:not(:disabled) {
-            background: var(--danger);
-            color: white;
+            background: #dc2626;
+            color: #fff;
         }
 
-        .btn-accept:disabled,
-        .btn-reject:disabled {
+        .btn-chat {
+            background: #f5f3ff;
+            color: #7c3aed;
+            border-color: #c4b5fd;
+        }
+
+        .btn-chat:hover {
+            background: #7c3aed;
+            color: #fff;
+        }
+
+        .action-btn:disabled {
             opacity: 0.4;
             cursor: not-allowed;
         }
 
-        /* ── Empty / Loading states ─────────────────────── */
         .empty-state {
             text-align: center;
-            padding: 80px 20px;
-            color: var(--muted);
-        }
-
-        .empty-state .icon {
-            font-size: 3.5rem;
-            margin-bottom: 16px;
-        }
-
-        .empty-state h3 {
-            font-size: 1.2rem;
-            margin-bottom: 8px;
-            color: var(--text);
-        }
-
-        .empty-state p {
+            padding: 60px 20px;
+            color: #aaa;
             font-size: 0.9rem;
         }
 
-        .loading-spinner {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding: 60px 20px;
-            color: var(--muted);
-        }
-
-        .spinner {
-            width: 20px;
-            height: 20px;
-            border: 2px solid var(--border);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 0.7s linear infinite;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* ── Notification toast ─────────────────────────── */
+        /* ── Toast ── */
         #toast {
             position: fixed;
-            bottom: 28px;
-            right: 28px;
-            background: rgba(30, 30, 50, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 14px 22px;
-            font-size: 0.9rem;
-            transform: translateY(80px);
+            bottom: 24px;
+            right: 24px;
+            background: #111;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transform: translateY(60px);
             opacity: 0;
-            transition: all 0.35s cubic-bezier(.34, 1.56, .64, 1);
-            z-index: 9999;
-            max-width: 320px;
+            transition: 0.3s;
+            z-index: 999;
         }
 
         #toast.show {
@@ -475,137 +461,214 @@
         }
 
         #toast.success {
-            border-color: rgba(16, 185, 129, 0.5);
+            background: #16a34a;
         }
 
         #toast.error {
-            border-color: rgba(239, 68, 68, 0.5);
+            background: #dc2626;
         }
 
         #toast.info {
-            border-color: rgba(108, 99, 255, 0.5);
+            background: #2563eb;
         }
 
-        /* ── Filter tabs ────────────────────────────────── */
-        .filter-tabs {
+        /* ── Chat Modal ── */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.35);
+            z-index: 200;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            z-index: 300;
+            width: 90%;
+            max-width: 460px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        .modal h3 {
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+
+        .modal p {
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 16px;
+        }
+
+        .chat-hist-box {
+            height: 240px;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            overflow-y: auto;
+            padding: 12px;
+            background: #fafafa;
+            margin-bottom: 12px;
             display: flex;
+            flex-direction: column;
             gap: 8px;
-            margin-bottom: 24px;
         }
 
-        .filter-tab {
-            padding: 7px 18px;
-            border-radius: 20px;
-            border: 1px solid var(--border);
-            background: transparent;
-            color: var(--muted);
-            font-family: var(--font);
+        .seller-msg-bubble {
+            padding: 8px 12px;
+            border-radius: 8px;
             font-size: 0.85rem;
+            max-width: 80%;
+            word-break: break-word;
+        }
+
+        .seller-msg-bubble.mine {
+            background: #111;
+            color: #fff;
+            align-self: flex-end;
+        }
+
+        .seller-msg-bubble.theirs {
+            background: #f0f0f0;
+            color: #111;
+            align-self: flex-start;
+        }
+
+        .modal-input {
+            flex: 1;
+            padding: 10px 13px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+            outline: none;
+        }
+
+        .modal-input:focus {
+            border-color: #111;
+        }
+
+        .btn-sm {
+            padding: 10px 16px;
+            background: #111;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
             cursor: pointer;
-            transition: all 0.2s;
+            font-size: 0.875rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
         }
 
-        .filter-tab.active,
-        .filter-tab:hover {
-            background: var(--surface);
-            color: var(--text);
-            border-color: var(--accent);
-        }
-
-        @media (max-width: 640px) {
-            .header {
-                padding: 14px 18px;
-            }
-
-            .stats-bar {
-                padding: 16px 18px;
-                flex-wrap: wrap;
-            }
-
-            .main {
-                padding: 20px 18px;
-            }
-
-            .order-footer {
-                flex-direction: column;
-                gap: 12px;
-                align-items: stretch;
-            }
-
-            .action-buttons {
-                justify-content: stretch;
-            }
-
-            .btn-accept,
-            .btn-reject {
-                flex: 1;
-                justify-content: center;
-            }
+        .btn-sm-cancel {
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-family: 'Inter', sans-serif;
+            padding: 10px;
         }
     </style>
 </head>
 
 <body>
 
-    <!-- Header -->
-    <header class="header">
-        <div class="brand">
-            <div class="brand-icon">👑</div>
-            <div>
-                <div class="brand-title">BuyerKing</div>
-                <div class="brand-sub">Seller Dashboard</div>
-            </div>
-        </div>
-        <div class="header-actions">
-            <div class="status-dot" id="liveStatus">Live</div>
-            <a href="/" class="btn-link">🛒 Buyer View</a>
-        </div>
-    </header>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="brand">BuyerKing</div>
+        <div class="brand-sub">Seller Dashboard</div>
 
-    <!-- Stats bar -->
-    <div class="stats-bar">
-        <div class="stat-card">
-            <div class="stat-label">Total Orders</div>
-            <div class="stat-value total" id="statTotal">—</div>
+        <div class="nav-label">Order Status</div>
+        <div class="nav-group">
+            <button class="nav-btn active" data-filter="all" onclick="setFilter('all', this)">📦 All Orders</button>
+            <button class="nav-btn" data-filter="pending" onclick="setFilter('pending', this)">⏳ Pending</button>
+            <button class="nav-btn" data-filter="accepted" onclick="setFilter('accepted', this)">✅ Accepted</button>
+            <button class="nav-btn" data-filter="rejected" onclick="setFilter('rejected', this)">❌ Rejected</button>
         </div>
-        <div class="stat-card">
-            <div class="stat-label">Pending</div>
-            <div class="stat-value pending" id="statPending">—</div>
+
+        <div class="nav-label">Category</div>
+        <div class="nav-group">
+            <button class="nav-btn cat-filter-btn active" onclick="setCategoryFilter('all', this)">🌐 All</button>
+            <button class="nav-btn cat-filter-btn" onclick="setCategoryFilter('Food', this)">🍔 Food</button>
+            <button class="nav-btn cat-filter-btn" onclick="setCategoryFilter('Beverages', this)">🥤 Beverages</button>
+            <button class="nav-btn cat-filter-btn" onclick="setCategoryFilter('Snacks', this)">🍪 Snacks</button>
+            <button class="nav-btn cat-filter-btn" onclick="setCategoryFilter('Electronics', this)">💻
+                Electronics</button>
         </div>
-        <div class="stat-card">
-            <div class="stat-label">Accepted</div>
-            <div class="stat-value accepted" id="statAccepted">—</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Rejected</div>
-            <div class="stat-value rejected" id="statRejected">—</div>
+
+        <div class="sidebar-footer">
+            <a href="/" class="back-link">← Back to Storefront</a>
         </div>
     </div>
 
-    <!-- Main content -->
-    <main class="main">
-        <div class="section-title">
-            Incoming Orders
-            <span class="count-badge" id="orderCount">0</span>
+    <!-- Content -->
+    <div class="content">
+        <div class="topbar">
+            <h2>Order Management</h2>
+            <div class="live-dot" id="liveStatus">Live</div>
         </div>
 
-        <!-- Filter tabs -->
-        <div class="filter-tabs">
-            <button class="filter-tab active" data-filter="all" onclick="setFilter('all', this)">All</button>
-            <button class="filter-tab" data-filter="pending" onclick="setFilter('pending', this)">⏳ Pending</button>
-            <button class="filter-tab" data-filter="accepted" onclick="setFilter('accepted', this)">✅ Accepted</button>
-            <button class="filter-tab" data-filter="rejected" onclick="setFilter('rejected', this)">❌ Rejected</button>
-        </div>
-
-        <div id="ordersList">
-            <div class="loading-spinner">
-                <div class="spinner"></div> Loading orders…
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-label">Total</div>
+                <div class="stat-value total" id="statTotal">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Pending</div>
+                <div class="stat-value pending" id="statPending">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Accepted</div>
+                <div class="stat-value accepted" id="statAccepted">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Rejected</div>
+                <div class="stat-value rejected" id="statRejected">—</div>
             </div>
         </div>
-    </main>
 
-    <!-- Toast notification -->
+        <div class="orders-area">
+            <div class="section-header">
+                <h3>Incoming Orders</h3>
+                <span class="section-count" id="orderCount">0</span>
+            </div>
+            <div class="orders-list" id="ordersList">
+                <div class="empty-state">Loading orders...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
     <div id="toast"></div>
+
+    <!-- Chat Modal Overlay -->
+    <div class="overlay" id="modalOverlay"></div>
+    <div class="modal" id="chatModal">
+        <h3>Chat with Buyer</h3>
+        <p>Reply to <strong id="chatBuyerNameText"></strong></p>
+        <p id="chatBuyerName" style="display:none;"></p>
+        <div id="sellerChatHistory" class="chat-hist-box">
+            <div style="text-align:center; color:#ccc; font-size:0.8rem;">Start of conversation</div>
+        </div>
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+            <input type="text" id="chatMessage" class="modal-input" placeholder="Type a reply..."
+                onkeypress="if(event.key==='Enter') sendChatMessage()">
+            <button class="btn-sm" onclick="sendChatMessage()">Send</button>
+        </div>
+        <div style="text-align:right;">
+            <button class="btn-sm-cancel" onclick="closeChatModal()">Close</button>
+        </div>
+    </div>
 
     <script src="js/seller.js"></script>
 </body>

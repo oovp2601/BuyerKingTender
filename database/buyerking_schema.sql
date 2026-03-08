@@ -1,20 +1,16 @@
--- Database: buyerking_v2
-CREATE DATABASE IF NOT EXISTS buyerking_v2;
-USE buyerking_v2;
-
 -- Tabel Penjual (Sellers)
-CREATE TABLE sellers (
-    seller_id INT AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS sellers (
+    seller_id INTEGER PRIMARY KEY AUTOINCREMENT,
     seller_name VARCHAR(100) NOT NULL,
-    category VARCHAR(50), -- e.g., Food, Electronics
+    category VARCHAR(50), 
     rating DECIMAL(3,2) DEFAULT 0.0,
-    speed_rating INT DEFAULT 30, -- Avg delivery time in mins/hours
+    speed_rating INT DEFAULT 30, 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Tabel Produk/Layanan (Menu)
-CREATE TABLE products (
-    product_id INT AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS products (
+    product_id INTEGER PRIMARY KEY AUTOINCREMENT,
     product_name VARCHAR(200) NOT NULL,
     category VARCHAR(50),
     description TEXT,
@@ -24,8 +20,8 @@ CREATE TABLE products (
 );
 
 -- Tabel Pembeli (Buyers)
-CREATE TABLE buyers (
-    buyer_id INT AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS buyers (
+    buyer_id INTEGER PRIMARY KEY AUTOINCREMENT,
     buyer_name VARCHAR(100) NOT NULL,
     email VARCHAR(100),
     phone VARCHAR(20),
@@ -34,14 +30,14 @@ CREATE TABLE buyers (
 );
 
 -- Tabel Tender/Order
-CREATE TABLE tenders (
-    tender_id INT AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS tenders (
+    tender_id INTEGER PRIMARY KEY AUTOINCREMENT,
     buyer_id INT,
     title VARCHAR(200) NOT NULL,
     description TEXT,
     quantity INT DEFAULT 1,
     max_price DECIMAL(12,2),
-    status ENUM('open', 'closed', 'awarded') DEFAULT 'open',
+    status VARCHAR(20) DEFAULT 'open',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (buyer_id) REFERENCES buyers(buyer_id)
 );
@@ -78,10 +74,11 @@ INSERT INTO buyers (buyer_name, email, address) VALUES
 
 -- Orders Table (created by buyers via chat, managed by sellers)
 CREATE TABLE IF NOT EXISTS orders (
-    order_id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INTEGER PRIMARY KEY AUTOINCREMENT,
     buyer_name VARCHAR(100) DEFAULT 'Guest',
     items_json TEXT NOT NULL,
     total_price DECIMAL(12,2) DEFAULT 0.00,
-    status ENUM('pending','accepted','rejected') DEFAULT 'pending',
+    status VARCHAR(20) DEFAULT 'pending',
+    note TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

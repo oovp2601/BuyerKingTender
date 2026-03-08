@@ -1,253 +1,612 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BuyerKing - Your AI Shopping Assistant</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BuyerKing - AI Shopping Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <style>
-        /* Inline overrides for full-page */
-        body,
-        html {
+        * {
             margin: 0;
             padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            box-sizing: border-box;
         }
 
-        #app-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f5f5;
+            color: #111;
             height: 100vh;
-            width: 100vw;
+            display: flex;
+            overflow: hidden;
         }
 
-        #chat-container {
-            width: 100%;
-            max-width: 800px;
-            /* Limit width on large screens */
-            height: 100%;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
+        /* ── Sidebar Cart ── */
+        .sidebar {
+            width: 320px;
+            background: #fff;
+            border-right: 1px solid #e5e5e5;
             display: flex;
             flex-direction: column;
-            border-left: 1px solid rgba(255, 255, 255, 0.1);
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
         }
 
-        header {
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.2);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            text-align: center;
-            color: white;
-            position: relative;
+        .sidebar-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e5e5;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        .seller-link {
-            position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            padding: 8px 16px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            background: rgba(255, 255, 255, 0.07);
-            color: rgba(255, 255, 255, 0.7);
-            font-family: 'Outfit', sans-serif;
-            font-size: 0.8rem;
-            text-decoration: none;
-            transition: all 0.2s;
+        .sidebar-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111;
         }
 
-        .seller-link:hover {
-            border-color: #e94560;
-            color: #e94560;
-            background: rgba(233, 69, 96, 0.1);
+        .cart-count {
+            background: #111;
+            color: #fff;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
         }
 
-        header h1 {
-            margin: 0;
-            font-size: 1.5rem;
-        }
-
-        header p {
-            margin: 5px 0 0;
-            opacity: 0.7;
-            font-size: 0.9rem;
-        }
-
-        #chat-history {
+        .cart-items {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
+            padding: 16px;
+        }
+
+        .cart-empty {
+            color: #999;
+            font-size: 0.875rem;
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .cart-item-info {
             display: flex;
             flex-direction: column;
-            gap: 15px;
-        }
-
-        #chat-input-area {
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.2);
-            display: flex;
-            gap: 10px;
-        }
-
-        input#message-input {
+            gap: 2px;
             flex: 1;
-            padding: 15px;
-            border-radius: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            outline: none;
-            font-family: 'Outfit', sans-serif;
         }
 
-        button#send-btn {
-            padding: 0 25px;
-            border-radius: 25px;
+        .cart-item-name {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .cart-item-price {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .cart-item-remove {
+            background: none;
             border: none;
-            background: #0f3460;
-            color: #e94560;
-            font-weight: bold;
+            color: #ccc;
             cursor: pointer;
+            font-size: 1rem;
+            padding: 0 0 0 10px;
+            transition: color 0.2s;
+        }
+
+        .cart-item-remove:hover {
+            color: #e74c3c;
+        }
+
+        .cart-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e5e5e5;
+            background: #fafafa;
+        }
+
+        .cart-total {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .checkout-btn {
+            width: 100%;
+            padding: 12px;
+            background: #111;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: background 0.2s;
+        }
+
+        .checkout-btn:hover {
+            background: #333;
+        }
+
+        /* ── Main Chat Area ── */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+        }
+
+        .chat-topbar {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e5e5e5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-brand {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .chat-brand span {
+            color: #555;
+            font-weight: 400;
+            font-size: 0.9rem;
+            margin-left: 8px;
+        }
+
+        .topbar-links {
+            display: flex;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .topbar-link {
+            font-size: 0.875rem;
+            color: #555;
+            text-decoration: none;
+            padding: 6px 12px;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            cursor: pointer;
+            background: #fff;
             transition: 0.2s;
+            font-family: 'Inter', sans-serif;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
-        button#send-btn:hover {
-            background: #16213e;
+        .topbar-link:hover {
+            background: #f5f5f5;
+            color: #111;
         }
 
-        /* Interactive Elements */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: #fafafa;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #ddd;
+            border-radius: 4px;
+        }
+
+        .msg {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            animation: fadeUp 0.25s ease;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .msg.bot {
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            align-self: flex-start;
+            color: #111;
+            border-radius: 4px 12px 12px 12px;
+        }
+
+        .msg.user {
+            background: #111;
+            color: #fff;
+            align-self: flex-end;
+            border-radius: 12px 4px 12px 12px;
+        }
+
+        .chat-input-row {
+            padding: 16px 24px;
+            border-top: 1px solid #e5e5e5;
+            display: flex;
+            gap: 8px;
+            background: #fff;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            background: #fafafa;
+            transition: border-color 0.2s;
+        }
+
+        .chat-input:focus {
+            border-color: #111;
+            background: #fff;
+        }
+
+        .send-btn {
+            padding: 12px 20px;
+            background: #111;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            transition: background 0.2s;
+        }
+
+        .send-btn:hover {
+            background: #333;
+        }
+
+        /* ── Bot UI Elements ── */
         .menu-chips {
             display: flex;
-            gap: 10px;
             flex-wrap: wrap;
-            margin-top: 5px;
+            gap: 8px;
+            margin-top: 8px;
         }
 
         .chip {
-            padding: 8px 15px;
-            background: rgba(233, 69, 96, 0.2);
-            border: 1px solid #e94560;
+            padding: 6px 14px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
             border-radius: 20px;
-            color: white;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
+            color: #333;
+            transition: 0.2s;
         }
 
         .chip:hover {
-            background: #e94560;
+            background: #111;
+            color: #fff;
+            border-color: #111;
+        }
+
+        .products-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
         }
 
         .product-card {
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 10px;
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            border-radius: 10px;
+            padding: 14px 16px;
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 15px;
-            border: 1px solid transparent;
-            cursor: pointer;
-            transition: all 0.2s;
+            gap: 12px;
+            transition: border-color 0.2s;
         }
 
         .product-card:hover {
-            background: rgba(255, 255, 255, 0.12);
-        }
-
-        .product-card.selected {
-            border-color: #e94560;
-            background: rgba(233, 69, 96, 0.1);
+            border-color: #111;
         }
 
         .product-info {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
             flex: 1;
         }
 
         .product-name {
             font-weight: 600;
-            color: #fff;
-            display: block;
-        }
-
-        .product-meta {
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.6);
-            margin-top: 4px;
+            font-size: 0.9rem;
         }
 
         .product-price {
-            color: #e94560;
-            font-weight: bold;
+            font-size: 0.85rem;
+            color: #333;
+            font-weight: 500;
         }
 
-        .product-check {
-            width: 24px;
-            height: 24px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .product-meta {
+            font-size: 0.78rem;
+            color: #888;
         }
 
-        .product-card.selected .product-check::after {
-            content: "✓";
-            color: #e94560;
-            font-weight: bold;
-        }
-
-        .action-actions {
-            margin-top: 10px;
-            text-align: right;
-        }
-
-        .add-to-cart-btn {
-            background: #e94560;
-            color: white;
+        .add-btn {
+            padding: 8px 14px;
+            background: #111;
+            color: #fff;
             border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
+            font-size: 0.8rem;
             font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            white-space: nowrap;
+            transition: 0.2s;
+            flex-shrink: 0;
+        }
+
+        .add-btn:hover {
+            background: #333;
+        }
+
+        /* ── Overlays / Modals ── */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 200;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            border-radius: 12px;
+            padding: 28px;
+            z-index: 300;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        .modal h3 {
+            font-size: 1.1rem;
+            margin-bottom: 6px;
+        }
+
+        .modal p {
+            font-size: 0.875rem;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-family: 'Inter', sans-serif;
+            margin-bottom: 12px;
+            outline: none;
+        }
+
+        .modal-input:focus {
+            border-color: #111;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .btn-cancel {
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-family: 'Inter', sans-serif;
+            padding: 8px 14px;
+        }
+
+        .btn-confirm {
+            background: #111;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            transition: 0.2s;
+        }
+
+        .btn-confirm:hover {
+            background: #333;
+        }
+
+        /* Chat history modal */
+        .chat-hist-box {
+            height: 260px;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            overflow-y: auto;
+            padding: 12px;
+            margin-bottom: 12px;
+            background: #fafafa;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .seller-msg-bubble {
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            max-width: 82%;
+            word-break: break-word;
+        }
+
+        .seller-msg-bubble.mine {
+            background: #111;
+            color: #fff;
+            align-self: flex-end;
+        }
+
+        .seller-msg-bubble.theirs {
+            background: #f0f0f0;
+            color: #111;
+            align-self: flex-start;
+        }
+
+        /* Floating button */
+        #sellerChatBtn {
+            display: none;
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 52px;
+            height: 52px;
+            background: #111;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.4rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s;
+            z-index: 100;
+        }
+
+        #sellerChatBtn:hover {
+            transform: scale(1.1);
         }
     </style>
 </head>
 
 <body>
-    <div id="app-container">
-        <div id="chat-container">
-            <header>
-                <h1>👑 BuyerKing</h1>
-                <p>Your Personal Shopping Assistant</p>
-                <a href="/seller.html" class="seller-link">🏪 Seller Dashboard</a>
-            </header>
 
-            <div id="chat-history">
-                <!-- Messages will appear here -->
-                <div class="message bot">
-                    Hello! I'm the BuyerKing Assistant. How can I help you today?
-                </div>
+    <!-- Sidebar Cart -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>🛒 My Cart</h2>
+            <span class="cart-count" id="cartCountBadge">0 items</span>
+        </div>
+        <div class="cart-items" id="cartItemsContainer">
+            <div class="cart-empty">Your cart is empty.<br>Ask the assistant to find items!</div>
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Total</span>
+                <span id="cartTotalPrice">Rp 0</span>
             </div>
+            <button class="checkout-btn" onclick="proceedToCheckout()">Checkout</button>
+        </div>
+    </div>
 
-            <div class="chat-input-area">
-                <input type="text" id="chatInput" class="chat-input" placeholder="Ask about tenders...">
-                <button id="sendBtn" class="send-btn">
-                    <i class="fa-solid fa-paper-plane"></i>
-                </button>
+    <!-- Main Chat -->
+    <div class="main">
+        <div class="chat-topbar">
+            <div class="chat-brand">BuyerKing <span>AI Shopping Assistant</span></div>
+            <div class="topbar-links">
+                <button class="topbar-link" onclick="sendMessage('history')">📜 History</button>
+                <a href="/seller.html" class="topbar-link">🏪 Seller</a>
             </div>
-            </section>
         </div>
 
-        <script src="js/app.js"></script>
+        <div class="chat-messages" id="chat-history">
+            <div class="msg bot">
+                👋 Hi! I'm your BuyerKing assistant.<br><br>
+                Try: <i>"I want something spicy"</i>, <i>"show me laptops"</i>, or <i>"I need a coffee"</i>.
+            </div>
+        </div>
+
+        <div class="chat-input-row">
+            <input type="text" id="chatInput" class="chat-input" placeholder="Ask me anything..." />
+            <button class="send-btn" id="sendBtn">Send</button>
+        </div>
+    </div>
+
+    <!-- Map / Address Modal -->
+    <div class="overlay" id="mapModalOverlay"></div>
+    <div class="modal" id="mapModal">
+        <h3>📍 Delivery Address</h3>
+        <p>Enter your delivery address and pin your location on the map.</p>
+        <input type="text" id="buyerAddress" class="modal-input" placeholder="e.g. Sudirman, Jakarta Pusat..." />
+        <div id="map" style="width:100%; height:220px; border-radius:8px; border:1px solid #e0e0e0; margin-bottom:4px;">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeMapModal()">Cancel</button>
+            <button class="btn-confirm" onclick="submitOrderWithAddress()">Place Order</button>
+        </div>
+    </div>
+
+    <!-- Seller Chat Modal -->
+    <div class="overlay" id="sellerChatModalOverlay"></div>
+    <div class="modal" id="sellerChatModal" style="max-width:420px;">
+        <h3>💬 Chat with Seller</h3>
+        <p>Send a message about your order.</p>
+        <div class="chat-hist-box" id="sellerChatHistory">
+            <div style="text-align:center; color:#aaa; font-size:0.8rem;">Start of conversation</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+            <input type="text" id="sellerChatInput" class="modal-input" style="margin:0; flex:1;"
+                placeholder="Type a message..." onkeypress="if(event.key==='Enter') sendDirectMessageToSeller()">
+            <button class="btn-confirm" onclick="sendDirectMessageToSeller()">Send</button>
+        </div>
+        <div class="modal-actions" style="margin-top:12px;">
+            <button class="btn-cancel" onclick="closeSellerChatModal()">Close</button>
+        </div>
+    </div>
+
+    <!-- Floating Seller Chat Button -->
+    <button id="sellerChatBtn" onclick="openSellerChatModal()">💬</button>
+
+    <script src="js/app.js"></script>
 </body>
 
 </html>

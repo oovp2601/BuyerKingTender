@@ -1,5 +1,7 @@
 package buyerking;
 
+import java.sql.*;
+
 public class Main {
     public static void main(String[] args) {
         System.out.println("Starting BuyerKing Tender System...");
@@ -23,26 +25,23 @@ public class Main {
 
     private static void initializeSampleData() {
         try {
-            // Check and create sample data if needed
             String checkBuyers = "SELECT COUNT(*) as count FROM buyers";
-            var rs = DatabaseManager.executeQuery(checkBuyers);
+            try (Connection conn = DatabaseManager.getConnection();
+                    Statement stmt = conn.createStatement();
+                    ResultSet rs = stmt.executeQuery(checkBuyers)) {
 
-            if (rs.next() && rs.getInt("count") == 0) {
-                System.out.println("Creating sample data...");
+                if (rs.next() && rs.getInt("count") == 0) {
+                    System.out.println("Creating sample data...");
 
-                // Data is already in schema.sql, but let's add sample tenders
-                TenderManager tenderManager = new TenderManager();
+                    TenderManager tenderManager = new TenderManager();
+                    tenderManager.createTender(1, "Catering for Company Event",
+                            "Need catering (Nasi Padang) for 50 people", 50, 850000, 3);
+                    tenderManager.createTender(2, "Laptops for School Lab",
+                            "Need 10 laptops for computer lab", 10, 70000000, 7);
 
-                // Create sample tenders
-                tenderManager.createTender(1, "Catering for Company Event",
-                        "Need catering (Nasi Padang) for 50 people", 50, 850000, 3);
-
-                tenderManager.createTender(2, "Laptops for School Lab",
-                        "Need 10 laptops for computer lab", 10, 70000000, 7);
-
-                System.out.println("Sample data created successfully!");
+                    System.out.println("Sample data created successfully!");
+                }
             }
-
         } catch (Exception e) {
             System.err.println("Error initializing sample data: " + e.getMessage());
         }

@@ -5,72 +5,74 @@ import java.sql.*;
 import java.util.Properties;
 
 public class DatabaseManager {
-    private static Connection connection = null;
 
-    public static Connection getConnection() {
-        if (connection == null) {
-            try {
-                // Load configuration
-                Properties props = new Properties();
-                InputStream input = DatabaseManager.class.getClassLoader()
-                        .getResourceAsStream("config.properties");
+    private static String dbUrl;
+    private static String dbUser;
+    private static String dbPassword;
+    private static boolean initialized = false;
 
-                // Fallback: Try loading from file system if classpath fails
-                if (input == null) {
-                    try {
-                        input = new java.io.FileInputStream("src/resources/config.properties");
-                    } catch (java.io.FileNotFoundException e) {
-                        try {
-                            input = new java.io.FileInputStream("config.properties");
-                        } catch (java.io.FileNotFoundException ex) {
-                            System.err.println("Config file not found!");
-                        }
-                    }
-                }
+    private static synchronized void loadConfig() {
+        if (initialized)
+            return;
+        try {
+            Properties props = new Properties();
+            InputStream input = DatabaseManager.class.getClassLoader()
+                    .getResourceAsStream("config.properties");
 
-                if (input != null) {
-                    props.load(input);
-                } else {
-                    throw new RuntimeException("Could not find config.properties");
-                }
-
-                String url = props.getProperty("db.url");
-                String user = props.getProperty("db.username");
-                String password = props.getProperty("db.password");
-
-                // Load driver and create connection
-                Class.forName("com.mysql.cj.jdbc.Driver");
+            if (input == null) {
                 try {
-                    connection = DriverManager.getConnection(url, user, password);
-                    System.out.println("Database connected successfully!");
-                } catch (SQLException e) {
-                    if (e.getMessage().contains("Unknown database")) {
-                        System.out.println("Database not found. Attempting to create...");
-                        initializeDatabase(url, user, password);
-                        // Retry connection
-                        connection = DriverManager.getConnection(url, user, password);
-                        System.out.println("Database created and connected successfully!");
-                    } else {
-                        throw e;
+                    input = new java.io.FileInputStream("src/resources/config.properties");
+                } catch (java.io.FileNotFoundException e) {
+                    try {
+                        input = new java.io.FileInputStream("config.properties");
+                    } catch (java.io.FileNotFoundException ex) {
+                        System.err.println("Config file not found!");
                     }
                 }
-
-            } catch (Exception e) {
-                System.err.println("Database connection failed: " + e.getMessage());
-                e.printStackTrace();
             }
+
+            if (input != null) {
+                props.load(input);
+            } else {
+                throw new RuntimeException("Could not find config.properties");
+            }
+
+            dbUrl = props.getProperty("db.url");
+            dbUser = props.getProperty("db.username", "");
+            dbPassword = props.getProperty("db.password", "");
+            String driver = props.getProperty("db.driver", "org.sqlite.JDBC");
+            Class.forName(driver);
+
+            // For SQLite, initialize schema once
+            if (dbUrl.contains("sqlite")) {
+                String path = dbUrl.replace("jdbc:sqlite:", "");
+                java.io.File dbFile = new java.io.File(path);
+                boolean needsInit = !dbFile.exists() || dbFile.length() == 0;
+                if (needsInit) {
+                    try (Connection conn = DriverManager.getConnection(dbUrl)) {
+                        initializeSchema(conn);
+                    }
+                }
+            }
+
+            initialized = true;
+            System.out.println("Database configured: " + dbUrl);
+
+        } catch (Exception e) {
+            System.err.println("Database config failed: " + e.getMessage());
+            e.printStackTrace();
         }
-        return connection;
     }
 
-    private static void initializeDatabase(String dbUrl, String user, String password) {
-        // Extract root URL (remove database name)
-        String rootUrl = dbUrl.substring(0, dbUrl.lastIndexOf("/"));
+    public static Connection getConnection() throws SQLException {
+        loadConfig();
+        if (dbUrl == null)
+            throw new SQLException("Database not configured");
+        return DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+    }
 
-        try (Connection conn = DriverManager.getConnection(rootUrl, user, password);
-                Statement stmt = conn.createStatement()) {
-
-            // Read schema file
+    private static void initializeSchema(Connection conn) {
+        try {
             java.nio.file.Path path = java.nio.file.Paths.get("database", "buyerking_schema.sql");
             if (!java.nio.file.Files.exists(path)) {
                 System.err.println("Schema file not found at: " + path.toAbsolutePath());
@@ -80,13 +82,14 @@ public class DatabaseManager {
             String script = java.nio.file.Files.readString(path);
             String[] statements = script.split(";");
 
+            Statement stmt = conn.createStatement();
             for (String sql : statements) {
-                if (sql.trim().isEmpty())
+                String trimmed = sql.trim();
+                if (trimmed.isEmpty())
                     continue;
                 try {
-                    stmt.execute(sql);
+                    stmt.execute(trimmed);
                 } catch (SQLException ex) {
-                    // Ignore "database exists" errors, etc.
                     System.err.println("Warning executing SQL: " + ex.getMessage());
                 }
             }
@@ -94,31 +97,17 @@ public class DatabaseManager {
             System.out.println("Schema initialized!");
 
         } catch (Exception e) {
-            System.err.println("Failed to initialize database: " + e.getMessage());
+            System.err.println("Failed to initialize schema: " + e.getMessage());
         }
     }
 
-    public static void closeConnection() {
-        try {
-            if (connection != null && !connection.isClosed()) {
-                connection.close();
-                System.out.println("Database connection closed.");
+    public static void closeConnection(Connection conn) {
+        if (conn != null) {
+            try {
+                conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
-    }
-
-    // Method untuk eksekusi query sederhana
-    public static ResultSet executeQuery(String query) throws SQLException {
-        Connection conn = getConnection();
-        Statement stmt = conn.createStatement();
-        return stmt.executeQuery(query);
-    }
-
-    public static int executeUpdate(String query) throws SQLException {
-        Connection conn = getConnection();
-        Statement stmt = conn.createStatement();
-        return stmt.executeUpdate(query);
     }
 }

@@ -1,0 +1,26 @@
+==================================
+   BUYERKING TENDER SYSTEM
+==================================
+
+Stopping any running server...
+Port 8080 is free.
+
+Compiling Java files...
+Running BuyerKing System...
+
+Starting BuyerKing Tender System...
+==================================
+Database configured: jdbc:sqlite:buyerking.db
+Starting Web Server...
+🌐 Web Server started at http://localhost:8080
+Use the Web Interface at http://localhost:8080
+Press Ctrl+C to stop.
+
+🤖 BuyerKing Chatbot is ready to help!
+Type 'help' to see available commands.
+
+> Exception in thread "main" java.util.NoSuchElementException: No line found
+	at java.base/java.util.Scanner.nextLine(Scanner.java:1660)
+	at buyerking.ChatbotInterface.start(ChatbotInterface.java:28)
+	at buyerking.Main.main(Main.java:23)
+./run.sh: line 30: 22173 Killed: 9               java -cp "bin:lib/mysql-connector-j-8.3.0.jar:lib/sqlite-jdbc-3.41.2.2.jar:lib/javax.servlet-api-4.0.1.jar" buyerking.Main

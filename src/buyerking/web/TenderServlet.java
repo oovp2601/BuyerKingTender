@@ -34,10 +34,9 @@ public class TenderServlet implements HttpHandler {
     }
 
     private void handleGet(HttpExchange exchange) throws IOException {
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT * FROM tenders ORDER BY created_at DESC LIMIT 20");
+        try (Connection conn = DatabaseManager.getConnection();
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery("SELECT * FROM tenders ORDER BY created_at DESC LIMIT 20")) {
 
             StringBuilder jsonArray = new StringBuilder("[");
             boolean first = true;
@@ -69,8 +68,8 @@ public class TenderServlet implements HttpHandler {
         byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().set("Content-Type", "application/json");
         exchange.sendResponseHeaders(statusCode, bytes.length);
-        OutputStream os = exchange.getResponseBody();
-        os.write(bytes);
-        os.close();
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(bytes);
+        }
     }
 }

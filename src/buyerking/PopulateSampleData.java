@@ -17,9 +17,13 @@ public class PopulateSampleData {
             stmt.executeUpdate("DELETE FROM products");
             stmt.executeUpdate("DELETE FROM sellers");
 
-            // Reset auto-increment counters
-            stmt.executeUpdate("ALTER TABLE sellers AUTO_INCREMENT = 1");
-            stmt.executeUpdate("ALTER TABLE products AUTO_INCREMENT = 1");
+            // Reset auto-increment counters (SQLite specific)
+            try {
+                stmt.executeUpdate("DELETE FROM sqlite_sequence WHERE name='sellers'");
+                stmt.executeUpdate("DELETE FROM sqlite_sequence WHERE name='products'");
+            } catch (Exception ignore) {
+                // sqlite_sequence might not exist yet, ignore
+            }
 
             // Insert Sellers
             System.out.println("Inserting sellers...");
@@ -33,7 +37,11 @@ public class PopulateSampleData {
                     "('TechMart Indonesia', 'Electronics', 4.6, 720), " +
                     "('Gadget Galaxy', 'Electronics', 4.8, 1200), " +
                     "('Warung Makan Sederhana', 'Food', 4.3, 15), " +
-                    "('Premium Food Court', 'Food', 4.9, 35)");
+                    "('Premium Food Court', 'Food', 4.9, 35), " +
+                    "('Sweet Treats Bakery', 'Snacks', 4.8, 15), " +
+                    "('Snack Corner', 'Snacks', 4.5, 10), " +
+                    "('Fresh Juice & Boba', 'Beverages', 4.7, 5), " +
+                    "('Kopi Premium Cafe', 'Beverages', 4.9, 8)");
 
             // Insert Food Products
             System.out.println("Inserting food products...");
@@ -93,9 +101,32 @@ public class PopulateSampleData {
                             "('Logitech MX Master 3', 'Electronics', 'Wireless mouse for productivity', 1500000, 7), " +
                             "('Mechanical Keyboard RGB', 'Electronics', 'Gaming keyboard with RGB lighting', 1200000, 8)");
 
+            // Insert Snacks Products
+            System.out.println("Inserting snacks products...");
+            stmt.executeUpdate(
+                    "INSERT INTO products (product_name, category, description, base_price, seller_id) VALUES " +
+                            "('Chocolate Chip Cookies', 'Snacks', 'Freshly baked soft cookies (1 Dozen)', 45000, 11), "
+                            +
+                            "('Brownies Fudgy', 'Snacks', 'Rich and fudgy chocolate brownies', 55000, 11), " +
+                            "('Keripik Singkong Pedas', 'Snacks', 'Spicy cassava chips, crunchy and addictive', 15000, 12), "
+                            +
+                            "('Pisang Goreng Keju', 'Snacks', 'Fried banana with cheese and chocolate', 20000, 12), " +
+                            "('Martabak Manis', 'Snacks', 'Sweet thick pancake with chocolate and peanuts', 40000, 12)");
+
+            // Insert Beverages Products
+            System.out.println("Inserting beverages products...");
+            stmt.executeUpdate(
+                    "INSERT INTO products (product_name, category, description, base_price, seller_id) VALUES " +
+                            "('Iced Latte', 'Beverages', 'Cold espresso with fresh milk', 25000, 14), " +
+                            "('Cappuccino', 'Beverages', 'Hot espresso with steamed milk foam', 28000, 14), " +
+                            "('Mango Juice', 'Beverages', 'Freshly squeezed mango juice', 18000, 13), " +
+                            "('Brown Sugar Boba', 'Beverages', 'Milk tea with brown sugar and boba pearls', 22000, 13), "
+                            +
+                            "('Sweet Iced Tea', 'Beverages', 'Classic refreshing sweet iced tea', 10000, 13)");
+
             System.out.println("✅ Sample data populated successfully!");
-            System.out.println("Total sellers: 10");
-            System.out.println("Total products: 30 (14 Food + 16 Electronics)");
+            System.out.println("Total sellers: 14");
+            System.out.println("Total products: 40 (14 Food + 16 Electronics + 5 Snacks + 5 Beverages)");
 
             stmt.close();
 
